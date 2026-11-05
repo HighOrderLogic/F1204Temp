@@ -1,0 +1,6 @@
+backend/data/
+*.duckdb
+*.duckdb.wal
+/scripts/
+/backend/tests/
+*.csv

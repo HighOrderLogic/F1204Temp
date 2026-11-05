@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Livestock Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/css/login.css">
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-bg" aria-hidden="true"></div>
+    <div class="login-panel">
+      <div class="login-card">
+        <div class="login-brand-logos">
+          <img src="/assets/logos/default/01_logo_usyd.png" alt="University of Sydney" class="login-brand-logo" onerror="this.remove()">
+          <img src="/assets/logos/default/02_logo_mla.png" alt="Meat &amp; Livestock Australia" class="login-brand-logo" onerror="this.remove()">
+        </div>
+        <div class="login-header">
+          <h1>Livestock Dashboard</h1>
+          <p class="subtitle">Advanced telemetry and herd analytics platform</p>
+        </div>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <div class="input-icon-wrap">
+              <i class="fa fa-user input-icon" aria-hidden="true"></i>
+              <input type="text" id="username" name="username" class="form-control" placeholder="Enter username" required autocomplete="username" autofocus>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-icon-wrap">
+              <i class="fa fa-lock input-icon" aria-hidden="true"></i>
+              <input type="password" id="password" name="password" class="form-control" placeholder="Enter password" required autocomplete="current-password">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" id="login-submit">
+            <span>Sign In</span>
+            <i class="fa fa-arrow-right" aria-hidden="true"></i>
+          </button>
+          <div id="login-error" class="login-error hidden" role="alert"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var h = location.hostname, p = location.port;
+      if ((h === 'localhost' || h === '127.0.0.1' || h === '[::1]') && p && p !== '8000') {
+        window.API_URL = 'http://' + (h === '[::1]' ? 'localhost' : h) + ':8000/api';
+      }
+    })();
+  </script>
+  <script src="/js/api.js" defer></script>
+  <script src="/js/auth.js" defer></script>
+</body>
+</html>

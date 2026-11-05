@@ -1,0 +1,129 @@
+:root {
+  /* --- Neutral Slate Scale (Ported from test/calibrated-palette) --- */
+  --slate-900:   #0F172A; /* Primary text, KPI values */
+  --slate-600:   #475569; /* Secondary body, labels, hints */
+  --slate-400:   #94A3B8; /* Muted metadata, placeholders, gridlines */
+  --slate-200:   #E2E8F0; /* Hairline borders, dividers */
+  --slate-100:   #F1F5F9; /* Subtle controls, table header fills */
+  --slate-50:    #F8F9FA; /* Low-glare muted canvas background */
+  --pure-white:  #FFFFFF; /* Card surface */
+
+  /* --- Structural Geometry & Surfaces --- */
+  --bg-canvas:     var(--slate-50);
+  --bg-surface:    var(--pure-white);
+  --bg-subtle:     var(--slate-100);
+  --border-subtle: var(--slate-200);
+  --border-strong: #CBD5E1;
+
+  /* --- Typography Colors --- */
+  --text-primary:   var(--slate-900);
+  --text-secondary: var(--slate-600);
+  --text-muted:     var(--slate-400);
+
+  /* --- 4-Step Modular Typography Scale --- */
+  --text-kpi:   28px;  --leading-kpi:   32px;  /* Hero KPI values */
+  --text-title: 20px;  --leading-title: 24px;  /* Page titles & view headers */
+  --text-card:  16px;  --leading-card:  20px;  /* Card headings, modal headers */
+  --text-base:  12px;  --leading-base:  16px;  /* Universal base: tables, forms, buttons */
+
+  /* --- Typography Weights --- */
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     600;
+  --weight-hero:     700;
+
+  /* --- Font Families --- */
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* --- Tier 1: Canonical Analytical Foundations (Calibrated Botanical) --- */
+  --core-pine:       #1B4332; /* Primary brand & structural frame anchor */
+  --core-emerald:    #059669; /* Top cohort prime & active telemetry (mint-emerald) */
+  --core-slate:      #475569; /* Neutral baseline for middle mob & secondary body text */
+  --core-amber:      #D97706; /* Statistical mean & warning indicators (amber-ochre) */
+  --core-terracotta: #B91C1C; /* Tail draft & telemetry anomaly (earthy brick) */
+  --core-steel:      #3E8698; /* Slate-teal for distributions & histograms */
+
+  /* --- Tier 2: Brand Interactive Tokens --- */
+  --primary:        var(--core-pine);
+  --primary-hover:  #2D6A4F;
+  --primary-active: #0F2B1F;
+  --primary-tint:   rgba(27, 67, 50, 0.08);
+
+  /* --- Tier 2: 3-Tier Performance Cohorts (Light Fill + Dark Text Architecture) --- */
+  --cohort-high:        var(--core-emerald);
+  --cohort-high-bg:     rgba(5, 150, 105, 0.08);
+  --cohort-high-text:   #065F46;
+  --cohort-high-border: rgba(5, 150, 105, 0.25);
+
+  --cohort-medium:        var(--slate-600);
+  --cohort-medium-bg:     var(--slate-100);
+  --cohort-medium-text:   var(--slate-900);
+  --cohort-medium-border: var(--border-subtle);
+
+  --cohort-low:        var(--core-terracotta);
+  --cohort-low-bg:     rgba(185, 28, 28, 0.08);
+  --cohort-low-text:   #991B1B;
+  --cohort-low-border: rgba(185, 28, 28, 0.25);
+
+  /* --- Tier 2: Statistical Reference Lines & Visualizations --- */
+  --stat-mean:      var(--core-amber);
+  --stat-median:    var(--slate-600);
+  --stat-hist-fill: var(--core-steel);
+  --stat-box-fill:  rgba(62, 134, 152, 0.15);
+
+  /* --- Tier 2: Telemetry Status & Alerts --- */
+  --status-normal:      var(--core-emerald);
+  --status-normal-bg:   rgba(5, 150, 105, 0.08);
+  --status-normal-text: #065F46;
+
+  --status-anomaly:      var(--core-terracotta);
+  --status-anomaly-bg:   rgba(185, 28, 28, 0.08);
+  --status-anomaly-text: #991B1B;
+
+  --status-warning:      var(--core-amber);
+  --status-warning-bg:   rgba(217, 119, 6, 0.08);
+  --status-warning-text: #92400E;
+
+  --status-info:      var(--core-steel);
+  --status-info-bg:   rgba(62, 134, 152, 0.08);
+  --status-info-text: #1E3A42;
+
+  /* --- Backward Compatibility Aliases --- */
+  --primary-light: var(--primary-hover);
+  --primary-dark:  var(--primary-active);
+  --secondary:     var(--slate-600);
+  --accent:        var(--core-amber);
+  --danger:        var(--core-terracotta);
+  --warning:       var(--core-amber);
+  --info:          var(--core-steel);
+  --success:       var(--core-emerald);
+
+  --bg:      var(--bg-canvas);
+  --card-bg: var(--bg-surface);
+  --border:  var(--border-subtle);
+  --gradient-primary: var(--primary);
+  --shadow: none;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius: 6px;
+  --sidebar-width: 350px;
+  --spacing: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+}
+
+a { color: var(--primary-light); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.hidden { display: none !important; }

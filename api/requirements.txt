@@ -1,0 +1,19 @@
+# Vercel API deps (must be inlined — do not use -r includes)
+fastapi==0.115.6
+uvicorn==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.0
+psycopg2-binary==2.9.10
+pandas==2.2.3
+numpy==2.2.1
+passlib==1.7.4
+PyJWT==2.10.1
+python-multipart==0.0.20
+httpx==0.28.1
+matplotlib==3.10.0
+reportlab==4.2.5
+resend==2.6.0
+python-dateutil==2.9.0.post0
+mangum==0.19.0
+openpyxl>=3.1.2
+Pillow>=10.4.0

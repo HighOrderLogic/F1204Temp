@@ -1,0 +1,11 @@
+# Slim deps for auth / health / filter choices only (no pandas / matplotlib / reportlab)
+fastapi==0.115.6
+uvicorn==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.0
+psycopg2-binary==2.9.10
+passlib==1.7.4
+PyJWT==2.10.1
+python-multipart==0.0.20
+python-dateutil==2.9.0.post0
+mangum==0.19.0

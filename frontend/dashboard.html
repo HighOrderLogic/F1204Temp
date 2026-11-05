@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Livestock Analytics</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+  <link rel="stylesheet" href="/css/components.css?v=20261015_01">
+  <link rel="stylesheet" href="/css/pages.css?v=20261015_01">
+  <!-- Plotly deferred: Summary Stats does not need it on first paint -->
+</head>
+<body>
+  <header class="app-header">
+    <nav class="navbar" aria-label="Main navigation">
+
+      <!-- Zone 1: Brand Identifier -->
+      <div class="navbar-brand">
+        <h1 class="navbar-title">Livestock Dashboard</h1>
+        <span class="nav-divider" aria-hidden="true"></span>
+      </div>
+
+      <!-- Zone 2: Segmented Navigation Rail -->
+      <div class="nav-tabs" role="tablist">
+        <button class="nav-tab active" data-page="summary" role="tab" aria-selected="true"><i class="fa fa-chart-pie" aria-hidden="true"></i> Summary Stats</button>
+        <button class="nav-tab" data-page="timeseries" role="tab" aria-selected="false"><i class="fa fa-chart-line" aria-hidden="true"></i> Time Series</button>
+        <button class="nav-tab" data-page="prediction" role="tab" aria-selected="false"><i class="fa fa-arrow-trend-up" aria-hidden="true"></i> Prediction</button>
+        <button class="nav-tab" data-page="distributions" role="tab" aria-selected="false"><i class="fa fa-chart-bar" aria-hidden="true"></i> Distributions</button>
+        <button class="nav-tab" data-page="cohorts" role="tab" aria-selected="false"><i class="fa fa-layer-group" aria-hidden="true"></i> Cohorts</button>
+        <button class="nav-tab" data-page="anomalies" role="tab" aria-selected="false"><i class="fa fa-triangle-exclamation" aria-hidden="true"></i> Anomalies</button>
+        <button class="nav-tab" data-page="data-management" role="tab" id="nav-data-mgmt" aria-selected="false"><i class="fa fa-table" aria-hidden="true"></i> Data Management</button>
+        <button class="nav-tab" data-page="reports" role="tab" aria-selected="false"><i class="fa fa-file-lines" aria-hidden="true"></i> Reports</button>
+        <button class="nav-tab" data-page="admin" role="tab" id="nav-admin" aria-selected="false"><i class="fa fa-shield-halved" aria-hidden="true"></i> Admin</button>
+      </div>
+
+      <!-- Zone 3: Utility Cluster -->
+      <div class="navbar-utilities">
+        <div class="farm-select-wrap hidden" id="farm-select-wrap">
+          <span class="farm-select-label">Farm</span>
+          <select id="farm-select" aria-label="Select farm" class="hidden"></select>
+          <div class="custom-picker custom-picker-navbar" id="picker-farm"></div>
+        </div>
+        <button id="logout-btn" class="btn btn-secondary nav-logout"><i class="fa fa-sign-out-alt" aria-hidden="true"></i> Logout</button>
+      </div>
+    </nav>
+  </header>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar" id="sidebar" aria-label="Data filters">
+      <div class="sidebar-branding" id="sidebar-branding">
+        <div class="sidebar-logos" id="logo-container" aria-label="Partner and farm logos"></div>
+      </div>
+      <h2>Data Filters</h2>
+      <span class="field-hint" id="admin-sidebar-hint" style="display:none;font-size:var(--text-base);color:var(--text-secondary);margin-bottom:8px;">Data filters apply to analytical views</span>
+      <div id="sidebar-filters-body" style="transition:opacity 0.2s ease">
+
+      <div class="filter-row">
+        <div class="form-group"><label for="picker-btn-year">Year</label><div class="custom-picker" id="picker-year"></div></div>
+        <div class="form-group"><label for="picker-btn-month">Month</label><div class="custom-picker" id="picker-month"></div></div>
+        <div class="form-group"><label for="picker-btn-day">Day</label><div class="custom-picker" id="picker-day"></div></div>
+      </div>
+      <div class="form-group" id="active-herd-section">
+        <div class="picker-header">
+          <label>Active Herd</label>
+          <span id="active-herd-badge" class="badge-neutral" style="font-size: 11px; color: var(--text-secondary);">Active: -- / -- head</span>
+        </div>
+        <div class="active-herd-grid">
+          <div class="active-herd-col">
+            <label for="btn-active-herd-toggle" class="active-herd-label">State</label>
+            <button type="button" id="btn-active-herd-toggle" class="btn btn-secondary active-herd-toggle-state-btn" aria-label="Toggle active herd filter" aria-pressed="false" title="Toggle active herd filter">
+              Off
+            </button>
+          </div>
+          <div class="active-herd-col active-herd-suboptions disabled" id="active-herd-options-window">
+            <label for="picker-btn-active_days" class="active-herd-label">Window</label>
+            <div class="custom-picker" id="picker-active-days" title="Sliding window duration"></div>
+          </div>
+          <div class="active-herd-col active-herd-suboptions disabled" id="active-herd-options-anchor">
+            <label for="picker-btn-active_ref" class="active-herd-label">Anchor</label>
+            <div class="custom-picker" id="picker-active-ref" title="Window reference anchor"></div>
+          </div>
+        </div>
+      </div>
+      <div class="filter-divider"></div>
+
+      <div class="form-group" id="measure-picker-section" style="transition:opacity 0.2s ease">
+        <div class="picker-header">
+          <label for="picker-btn-measure">Measure</label>
+          <div class="filter-actions">
+            <button type="button" class="filter-action-btn" data-select-all="measure">All</button>
+            <span class="action-divider">·</span>
+            <button type="button" class="filter-action-btn" data-invert="measure">Invert</button>
+          </div>
+        </div>
+        <div class="custom-picker" id="picker-measure"></div>
+        <span class="field-hint" id="measure-module-hint" style="display:none;font-size:var(--text-base);color:var(--text-secondary);margin-top:2px"></span>
+      </div>
+
+      <div class="form-group" id="cohort-percentile-section" style="transition:opacity 0.2s ease">
+        <label for="picker-btn-cohort_percentile">Cohort Percentile</label>
+        <div class="custom-picker" id="picker-cohort-percentile"></div>
+        <span class="field-hint" id="cohort-percentile-hint" style="display:none;font-size:var(--text-base);color:var(--text-secondary);margin-top:2px">Used on Cohorts & Reports</span>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="filter-group-demographics">
+        <div class="filter-row-2">
+          <div class="form-group">
+            <div class="picker-header">
+              <label for="picker-btn-sex">Sex</label>
+              <div class="filter-actions">
+                <button type="button" class="filter-action-btn" data-select-all="sex">All</button>
+                <span class="action-divider">·</span>
+                <button type="button" class="filter-action-btn" data-invert="sex">Invert</button>
+              </div>
+            </div>
+            <div class="custom-picker" id="picker-sex"></div>
+          </div>
+          <div class="form-group">
+            <div class="picker-header">
+              <label for="picker-btn-treatment">Treatment</label>
+              <div class="filter-actions">
+                <button type="button" class="filter-action-btn" data-select-all="treatment">All</button>
+                <span class="action-divider">·</span>
+                <button type="button" class="filter-action-btn" data-invert="treatment">Invert</button>
+              </div>
+            </div>
+            <div class="custom-picker" id="picker-treatment"></div>
+          </div>
+        </div>
+        <div class="filter-row-2">
+          <div class="form-group">
+            <div class="picker-header">
+              <label for="picker-btn-breed">Breed</label>
+              <div class="filter-actions">
+                <button type="button" class="filter-action-btn" data-select-all="breed">All</button>
+                <span class="action-divider">·</span>
+                <button type="button" class="filter-action-btn" data-invert="breed">Invert</button>
+              </div>
+            </div>
+            <div class="custom-picker" id="picker-breed"></div>
+          </div>
+          <div class="form-group">
+            <div class="picker-header">
+              <label for="picker-btn-mob">Mob</label>
+              <div class="filter-actions">
+                <button type="button" class="filter-action-btn" data-select-all="mob">All</button>
+                <span class="action-divider">·</span>
+                <button type="button" class="filter-action-btn" data-invert="mob">Invert</button>
+              </div>
+            </div>
+            <div class="custom-picker" id="picker-mob"></div>
+          </div>
+        </div>
+        <!-- Extra filter columns an admin enabled for this farm (filters.js renderDimensionFilters) -->
+        <div class="filter-row-2 hidden" id="extra-filters"></div>
+        <div class="form-group hidden" id="eid-section">
+          <div class="picker-header">
+            <label for="picker-btn-eid">EID</label>
+            <div class="filter-actions">
+              <button type="button" class="filter-action-btn" data-select-all="eid">All</button>
+              <span class="action-divider">·</span>
+              <button type="button" class="filter-action-btn" data-invert="eid">Invert</button>
+            </div>
+          </div>
+          <div class="custom-picker" id="picker-eid"></div>
+        </div>
+      </div>
+
+      <div class="sidebar-sticky-dock">
+        <p class="record-count" id="record-count">Loading...</p>
+        <button class="btn btn-secondary btn-block" id="clear-filters"><i class="fa fa-rotate-left" aria-hidden="true"></i> Clear All Filters</button>
+        <div class="saved-views">
+          <h2>Saved Views</h2>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input type="text" id="view-name" placeholder="Enter view name..." class="form-control" style="flex:1">
+            <button class="btn btn-primary btn-sm" id="save-view"><i class="fa fa-floppy-disk" aria-hidden="true"></i> Save</button>
+          </div>
+          <div id="saved-views-list"></div>
+          <button class="btn btn-secondary btn-sm btn-block" id="clear-all-views" style="margin-top:8px;"><i class="fa fa-trash" aria-hidden="true"></i> Clear all saved views</button>
+        </div>
+      </div>
+      </div>
+    </aside>
+
+    <main class="main-content" id="page-content" role="tabpanel"></main>
+  </div>
+
+  <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle filters"><i class="fa fa-filter"></i></button>
+
+  <script>
+    (function () {
+      var h = location.hostname, p = location.port;
+      if ((h === 'localhost' || h === '127.0.0.1' || h === '[::1]') && p && p !== '8000') {
+        window.API_URL = 'http://' + (h === '[::1]' ? 'localhost' : h) + ':8000/api';
+      }
+    })();
+  </script>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/filters.js?v=20261025_01"></script>
+  <script src="/js/saved-views.js"></script>
+  <script src="/js/pages/summary.js"></script>
+  <script src="/js/pages/timeseries.js"></script>
+  <script src="/js/pages/prediction.js?v=20261020_02"></script>
+  <script src="/js/pages/distributions.js"></script>
+  <script src="/js/pages/cohorts.js"></script>
+  <script src="/js/pages/anomalies.js"></script>
+  <script src="/js/pages/data-management.js"></script>
+  <script src="/js/pages/reports.js"></script>
+  <script src="/js/pages/admin.js"></script>
+  <script>
+    const PAGE_RENDERERS = {
+      summary: renderSummary,
+      timeseries: renderTimeseries,
+      prediction: renderPrediction,
+      distributions: renderDistributions,
+      cohorts: renderCohorts,
+      anomalies: renderAnomalies,
+      'data-management': renderDataManagement,
+      reports: renderReports,
+      admin: renderAdmin,
+    };
+
+    let currentPage = 'summary';
+    let plotlyLoading = null;
+
+    function loadPlotly() {
+      if (window.Plotly) return Promise.resolve();
+      if (plotlyLoading) return plotlyLoading;
+      plotlyLoading = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.plot.ly/plotly-2.27.0.min.js';
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('Failed to load Plotly'));
+        document.head.appendChild(s);
+      });
+      return plotlyLoading;
+    }
+
+    function renderCurrentPage(options = {}) {
+      const container = document.getElementById('page-content');
+      const renderer = PAGE_RENDERERS[currentPage];
+      if (!renderer) return;
+      // Empty farm: every analytical module shows the same no-data screen (admin stays usable).
+      if (currentPage !== 'admin' && typeof isFarmEmpty === 'function' && isFarmEmpty()) {
+        renderFarmEmptyState(container);
+        return;
+      }
+      const needsPlotly = ['timeseries', 'prediction', 'distributions', 'cohorts', 'anomalies'].includes(currentPage);
+      const run = () => {
+        if (currentPage === 'timeseries' || currentPage === 'summary') {
+          renderer(container, options);
+        } else {
+          renderer(container);
+        }
+        container.classList.remove('fade-in');
+        void container.offsetWidth;
+        container.classList.add('fade-in');
+      };
+      if (needsPlotly) {
+        loadPlotly().then(run).catch((err) => {
+          container.innerHTML = `<div class="alert alert-warning">${err.message}</div>`;
+        });
+      } else {
+        run();
+      }
+    }
+
+    function switchPage(page) {
+      if (page === 'data-management' && !canExportRaw()) {
+        showToast('Data Management is admin only', 'warning');
+        return;
+      }
+      if (page === 'admin' && !isAdmin()) {
+        showToast('Admin is admin only', 'warning');
+        return;
+      }
+      currentPage = page;
+      if (typeof updateCohortPercentileModuleState === 'function') {
+        updateCohortPercentileModuleState(page);
+      }
+      if (typeof updateMeasureModuleState === "function") {
+        updateMeasureModuleState(page);
+      }
+      if (typeof updateAdminSidebarState === "function") {
+        updateAdminSidebarState(page);
+      }
+      if (typeof resetTimeseriesShell === 'function') resetTimeseriesShell();
+      document.querySelectorAll('.nav-tab').forEach(t => {
+        const isActive = t.dataset.page === page;
+        t.classList.toggle('active', isActive);
+        t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+      renderCurrentPage({ dimOnly: false });
+    }
+
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.addEventListener('click', () => switchPage(tab.dataset.page));
+      // Warm the heavy anomaly function before the user clicks the tab.
+      if (tab.dataset.page === 'anomalies') {
+        const warmAnomalies = () => {
+          if (typeof prefetchAnomalies === 'function') prefetchAnomalies();
+        };
+        tab.addEventListener('pointerenter', warmAnomalies, { once: false });
+        tab.addEventListener('focus', warmAnomalies, { once: false });
+      }
+    });
+
+    document.getElementById('sidebar-toggle').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('open');
+    });
+
+    function onFiltersChanged(opts = {}) {
+      if (currentPage === 'admin' && !opts?.farmChanged) {
+        return;
+      }
+      if (currentPage === 'data-management' && typeof resetDataManagementPage === 'function') {
+        resetDataManagementPage();
+      }
+      renderCurrentPage(opts || {});
+    }
+
+    function escapeFarmText(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function setFarmQuery(farmId) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('farm', farmId);
+      history.replaceState({}, '', url);
+    }
+
+    async function loadFarmLogos(farmId) {
+      const container = document.getElementById('logo-container');
+      if (!container) return;
+      try {
+        const res = await apiFetch(`/farms/${encodeURIComponent(farmId)}/logos`);
+        const logos = res?.logos || [];
+        if (!logos.length) {
+          container.innerHTML = '';
+          return;
+        }
+        container.innerHTML = logos.map((l) => (
+          `<img class="partner-logo" src="${escapeFarmText(resolveAssetUrl(l.url))}" alt="${escapeFarmText(l.filename || 'Logo')}" title="${escapeFarmText(l.filename || '')}">`
+        )).join('');
+      } catch (err) {
+        console.warn('Could not load logos for farm', farmId, err);
+      }
+    }
+    window.loadFarmLogos = loadFarmLogos;
+
+    async function initFarmSelector(targetFarmId = null) {
+      const wrap = document.getElementById('farm-select-wrap');
+      const select = document.getElementById('farm-select');
+      const user = getUser();
+      if (!wrap || !select) return;
+
+      const canSwitch = Boolean(isAdmin() || (user && Array.isArray(user.farms) && user.farms.length > 1));
+
+      let farms = Array.isArray(user?.farms) ? user.farms : [];
+      if (isAdmin()) {
+        try {
+          const live = await apiFetch('/farms');
+          if (Array.isArray(live) && live.length) farms = live;
+        } catch (_) { /* keep farms from the login session */ }
+      }
+
+      if (!farms.length) return;
+      const stored = getUser();
+      if (stored && isAdmin()) {
+        stored.farms = farms.map((f) => ({
+          farm_id: f.farm_id,
+          farm_name: f.farm_name,
+          slug: f.slug,
+        }));
+        sessionStorage.setItem('user', JSON.stringify(stored));
+      }
+
+      const allowed = new Set(farms.map((f) => f.farm_id));
+      let current = targetFarmId || getFarmId();
+      if (!allowed.has(current)) {
+        current = farms[0].farm_id;
+      }
+      setFarmQuery(current);
+
+      if (!canSwitch) {
+        wrap.classList.add('hidden');
+        loadFarmLogos(current);
+        return;
+      }
+
+      select.innerHTML = farms.map((f) => (
+        `<option value="${escapeFarmText(f.farm_id)}">${escapeFarmText(f.farm_name)}</option>`
+      )).join('');
+
+      const rawOptions = farms.map((f) => ({ value: f.farm_id, label: f.farm_name }));
+      select.value = current;
+      wrap.classList.remove('hidden');
+
+      const handleFarmChange = (nextFarm) => {
+        if (!nextFarm) return;
+        select.value = nextFarm;
+        setFarmQuery(nextFarm);
+        loadFarmLogos(nextFarm);
+        if (typeof resetTimeseriesShell === 'function') resetTimeseriesShell();
+        if (typeof resetDataManagementPage === 'function') resetDataManagementPage();
+        if (typeof resetFiltersForFarm === 'function') resetFiltersForFarm();
+        const main = document.getElementById('page-content');
+        const warm = typeof getFarmBootCache === 'function' && getFarmBootCache(nextFarm)?.choices;
+        if (!warm && main && typeof showLoading === 'function' && currentPage !== 'admin') {
+          showLoading(main);
+        }
+        if (currentPage === 'admin') {
+          renderCurrentPage({ farmChanged: true });
+        }
+        if (typeof prefetchAnomaliesForFarm === 'function') {
+          prefetchAnomaliesForFarm(nextFarm);
+        }
+        initFilters((opts) => {
+          if (currentPage === 'admin') return;
+          onFiltersChanged(opts);
+        });
+      };
+
+      if (typeof createCustomDropdown === 'function') {
+        createCustomDropdown({
+          container: 'picker-farm',
+          field: 'farm',
+          options: rawOptions,
+          value: current,
+          onChange: handleFarmChange,
+          size: 'navbar',
+        });
+      }
+
+      if (!select._hasChangeListener) {
+        select.addEventListener('change', () => {
+          handleFarmChange(select.value);
+          if (typeof updateSingleSelectPickerValue === 'function') {
+            updateSingleSelectPickerValue('farm', select.value);
+          }
+        });
+        select._hasChangeListener = true;
+      }
+
+      if (targetFarmId) {
+        handleFarmChange(targetFarmId);
+      }
+
+      const measureHint = localStorage.getItem('livestock_last_measure') || 'finalpweight';
+      if (typeof prefetchOtherFarmBoots === 'function') {
+        setTimeout(() => prefetchOtherFarmBoots(current, measureHint), 800);
+      }
+      if (typeof prefetchOtherFarmAnomalies === 'function') {
+        setTimeout(() => prefetchOtherFarmAnomalies(current), 1200);
+      }
+    }
+    window.initFarmSelector = initFarmSelector;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!requireAuth()) return;
+      // Non-admins: take the restricted tabs out of the DOM entirely (the server can't do this —
+      // dashboard.html is static and document requests carry no JWT, which lives in sessionStorage).
+      // The real boundary is require_admin on every admin API endpoint.
+      const dataMgmtTab = document.getElementById('nav-data-mgmt');
+      if (dataMgmtTab && !canExportRaw()) dataMgmtTab.remove();
+      const adminTab = document.getElementById('nav-admin');
+      if (adminTab && !isAdmin()) adminTab.remove();
+      // Prefetch Plotly in the background after first paint path starts.
+      setTimeout(() => { loadPlotly().catch(() => {}); }, 2500);
+      initSavedViews();
+      // Vertical mouse wheel scrolls the navbar tab strip horizontally (only when it overflows).
+      const navTabs = document.querySelector('.nav-tabs');
+      navTabs?.addEventListener('wheel', (e) => {
+        if (navTabs.scrollWidth <= navTabs.clientWidth) return; // nothing to scroll: let the page scroll
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+          navTabs.scrollLeft += e.deltaY;
+          e.preventDefault();
+        }
+      }, { passive: false });
+      const main = document.getElementById('page-content');
+      if (main && typeof showLoading === 'function') showLoading(main);
+      if (typeof updateCohortPercentileModuleState === 'function') {
+        updateCohortPercentileModuleState(currentPage);
+      }
+      if (typeof updateMeasureModuleState === "function") {
+        updateMeasureModuleState(currentPage);
+      }
+      if (typeof updateAdminSidebarState === "function") {
+        updateAdminSidebarState(currentPage);
+      }
+      loadFarmLogos(getFarmId());
+      await initFarmSelector();
+      initFilters(onFiltersChanged);
+      // After filters are ready, warm the heavy anomaly stack in the background.
+      setTimeout(() => {
+        if (typeof prefetchAnomalies === 'function') prefetchAnomalies();
+        if (typeof prefetchOtherFarmAnomalies === 'function') prefetchOtherFarmAnomalies(getFarmId());
+      }, 1500);
+    });
+  </script>
+</body>
+</html>
+
