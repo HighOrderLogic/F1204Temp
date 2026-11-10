@@ -157,6 +157,19 @@ def validate_and_prepare_dataset(df: pd.DataFrame, farm_id: str) -> pd.DataFrame
 
     df_norm = df.rename(columns=col_mapping)
 
+    # Two headers that clean to the same name (weight + Weight, pweight + p_weight)
+    # make df[col] a DataFrame. pd.to_numeric then raises TypeError instead of a 400.
+    duplicated = list(dict.fromkeys(df_norm.columns[df_norm.columns.duplicated()]))
+    if duplicated:
+        names = ", ".join(str(name) for name in duplicated)
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"File has duplicate columns after header cleanup: {names}. "
+                "Rename or remove the extra column and re-upload."
+            ),
+        )
+
     # Check mandatory columns
     if "eid" not in df_norm.columns or "date" not in df_norm.columns:
         raise HTTPException(status_code=400, detail="CSV must contain EID and Date columns")
