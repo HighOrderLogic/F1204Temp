@@ -25,6 +25,22 @@ def _validate_measure(measure: str) -> str:
     return measure
 
 
+def _finite_measure(measure: str) -> str:
+    """Keep only real numbers.
+
+    Postgres treats NaN as a value and sorts it above every other number, so AVG, MIN and MAX
+    become NaN. The API then cannot encode the response and the page shows an internal server error.
+    This database build has no isfinite(float), and NaN compares equal to NaN, so inequality works.
+    """
+    measure = _validate_measure(measure)
+    col = f'"{measure}"::double precision'
+    return (
+        f"{col} <> 'NaN'::double precision"
+        f" AND {col} <> 'Infinity'::double precision"
+        f" AND {col} <> '-Infinity'::double precision"
+    )
+
+
 def _apply_extra_filters(filters: FilterState, clauses: list[str], params: list[Any]) -> None:
     """Narrow by admin-enabled extra categorical columns (keys were validated by FilterState)."""
     for col, selected in sorted((filters.extra_filters or {}).items()):
@@ -193,7 +209,7 @@ def _fetch_daily_grain(filters: FilterState, is_admin: bool, measure: str) -> li
           MIN("{measure}")::float AS min_v,
           MAX("{measure}")::float AS max_v
         FROM animal_data
-        WHERE {where} AND "{measure}" IS NOT NULL
+        WHERE {where} AND {_finite_measure(measure)}
         GROUP BY {group_sql}
         ORDER BY date
         """,
@@ -409,7 +425,7 @@ def timeseries_grain_sql(filters: FilterState, measure: str) -> dict:
           MIN("{measure}")::float AS mn,
           MAX("{measure}")::float AS mx
         FROM animal_data
-        WHERE {where} AND "{measure}" IS NOT NULL
+        WHERE {where} AND {_finite_measure(measure)}
         GROUP BY date, sex, treatment, breed, mob
         ORDER BY date
         """,
@@ -450,7 +466,7 @@ def _fetch_measure_observations(
           eid,
           "{measure}"::float AS value
         FROM animal_data
-        WHERE {where} AND "{measure}" IS NOT NULL
+        WHERE {where} AND {_finite_measure(measure)}
         """,
         tuple(params),
     )
@@ -501,7 +517,7 @@ def summary_sql_fast(filters: FilterState, is_admin: bool, measure: str) -> dict
         WITH bounded AS (
           SELECT date, "{measure}"::float AS m
           FROM animal_data
-          WHERE {where} AND "{measure}" IS NOT NULL
+          WHERE {where} AND {_finite_measure(measure)}
         ),
         bounds AS (
           SELECT MAX(date) AS max_d FROM bounded
@@ -671,7 +687,7 @@ def distribution_sql(
                        PARTITION BY eid
                    ) AS max_animal_date
             FROM animal_data
-            WHERE {where} AND "{measure}" IS NOT NULL
+            WHERE {where} AND {_finite_measure(measure)}
         )
         SELECT eid,
                (ARRAY_AGG(sex ORDER BY date DESC))[1] AS sex,

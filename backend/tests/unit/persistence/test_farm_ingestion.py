@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 from fastapi import HTTPException
 
-from app.services.farm_ingestion import upload_column_stats, validate_and_prepare_dataset
+from app.services.farm_ingestion import _null_nonfinite, upload_column_stats, validate_and_prepare_dataset
 
 
 def test_duplicate_headers_are_rejected_before_numeric_cast():
@@ -80,3 +80,11 @@ def test_upload_column_stats_count_values_and_blanks():
     assert stats["breed"] == (2, True)
     assert stats["weight"] == (3, True)
     assert stats["mob"] == (2, True)
+
+
+def test_null_nonfinite_stores_missing_numbers_as_none():
+    frame = pd.DataFrame({"weight": [400.0, float("nan"), float("inf"), float("-inf")]})
+
+    out = _null_nonfinite(frame)
+
+    assert out["weight"].tolist() == [400.0, None, None, None]

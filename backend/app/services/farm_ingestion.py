@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import logging
+import math
 import re
 from typing import Any, Callable
 
@@ -320,6 +321,17 @@ def upload_column_stats(df: pd.DataFrame) -> dict[str, tuple[int, bool]]:
     return stats
 
 
+def _null_nonfinite(df: pd.DataFrame) -> pd.DataFrame:
+    """Store missing numbers as NULL. A float NaN is a real Postgres value, and averages of it are NaN."""
+    out = df.copy()
+    for col in out.select_dtypes(include="number").columns:
+        values = pd.to_numeric(out[col], errors="coerce")
+        finite = values.map(lambda v: isinstance(v, (int, float)) and math.isfinite(v) and not isinstance(v, bool))
+        cleaned = values.where(finite)
+        out[col] = cleaned.astype(object).where(cleaned.notna(), None)
+    return out
+
+
 def _text_or_none(val: Any) -> str | None:
     if val is None or (isinstance(val, float) and val != val):
         return None
@@ -450,7 +462,7 @@ def ingest_farm_data(
     # Vectorized bulk upsert. Any extra columns were added to animal_data by sync_extra_columns;
     # names are quoted because an uploaded header can be an SQL keyword (e.g. "order").
     insert_cols = BASE_INSERT_COLS + [c for c in df.columns if c not in BASE_INSERT_COLS]
-    staged_df = df.reindex(columns=insert_cols)
+    staged_df = _null_nonfinite(df.reindex(columns=insert_cols))
     cols_joined = ", ".join(f'"{c}"' for c in insert_cols)
     total_staged = len(staged_df)
 
