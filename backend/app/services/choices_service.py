@@ -4,6 +4,33 @@ from __future__ import annotations
 from app.constants import MEASURE_LABELS, MONTH_NAMES
 
 
+def _measures_with_records(farm_id: str, measures: list[str]) -> list[str]:
+    """Enabled measures that have at least one real number on this farm.
+
+    A column of blanks cannot be averaged. Postgres also stores a missing cell as NaN,
+    which is not null, so the check uses the same finite-number test as the charts.
+    """
+    from app.db import fetch_one
+    from app.services.sql_agg import _finite_measure
+    from app.services.variable_service import SAFE_COLUMN_NAME
+
+    safe = [m for m in measures if SAFE_COLUMN_NAME.match(m)]
+    if not safe:
+        return []
+    selects = ", ".join(
+        f'COUNT(*) FILTER (WHERE {_finite_measure(m)})::int AS "{m}"' for m in safe
+    )
+    try:
+        row = fetch_one(
+            f"SELECT {selects} FROM animal_data WHERE farm_id = %s",
+            (farm_id,),
+        ) or {}
+    except Exception:
+        return safe
+    lowered = {str(key).lower(): value for key, value in row.items()}
+    return [m for m in safe if int(lowered.get(m.lower()) or 0) > 0]
+
+
 def get_filter_choices(farm_id: str, is_admin: bool) -> dict:
     from app.db import fetch_all, fetch_one
 
@@ -47,7 +74,7 @@ def get_filter_choices(farm_id: str, is_admin: bool) -> dict:
 
     active = VariableService.get_active_columns(farm_id)
     active_filters = active["filters"]
-    active_measures = active["measures"]
+    active_measures = _measures_with_records(farm_id, active["measures"])
 
     # Resolve measures with human-readable labels
     measures_payload = []

@@ -206,18 +206,33 @@ def test_choices_service_dynamic_fallback():
     assert "dynamic_filters" in choices
     assert "sex" in choices["active_filter_columns"]
     assert "treatment" in choices["active_filter_columns"]
-    assert "finalpweight" in choices["active_measure_columns"]
+    # No rows, so no measure can be aggregated.
+    assert choices["active_measure_columns"] == []
+    assert choices["measures"] == []
 
     # 2. Dynamic configured case: Custom columns configured
     configured_columns = [
         {"column_name": "breed", "kind": "categorical", "is_filter": True, "is_shown": False, "distinct_count": 3},
         {"column_name": "finalpweight", "kind": "numeric", "is_filter": False, "is_shown": True, "distinct_count": 10},
+        {"column_name": "methane", "kind": "numeric", "is_filter": False, "is_shown": True, "distinct_count": 0},
     ]
     VariableService.save_farm_columns("CONFIGURED_FARM", configured_columns)
+    execute(
+        "DELETE FROM animal_data WHERE farm_id = %s",
+        ("CONFIGURED_FARM",),
+    )
+    execute(
+        "INSERT INTO animal_data (farm_id, eid, date, sex, finalpweight) VALUES (%s, %s, %s, %s, %s)",
+        ("CONFIGURED_FARM", "E1", "2023-01-01", "Steer", 500),
+    )
     dyn_choices = get_filter_choices("CONFIGURED_FARM", is_admin=False)
     assert dyn_choices["active_filter_columns"] == ["breed"]
+    # methane is enabled but has no values, so it is not offered.
     assert dyn_choices["active_measure_columns"] == ["finalpweight"]
+    assert [m["key"] for m in dyn_choices["measures"]] == ["finalpweight"]
     assert "breed" in dyn_choices["dynamic_filters"]
+    execute("DELETE FROM animal_data WHERE farm_id = %s", ("CONFIGURED_FARM",))
+    execute("DELETE FROM farm_columns WHERE farm_id = %s", ("CONFIGURED_FARM",))
 
 
 def test_cold_start_empty_farm_suggests_weight_measure():
