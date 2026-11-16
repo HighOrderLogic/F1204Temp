@@ -13,7 +13,7 @@ from app.services.variable_service import (
     invalidate_active_columns,
 )
 
-_CONFIGURED_FARMS = ("KF", "TEST_FARM", "TEST_NULL", "TEST_HEUR", "CONFIGURED_FARM", "FALLBACK_FARM")
+_CONFIGURED_FARMS = ("KF", "TEST_FARM", "TEST_NULL", "TEST_HEUR", "CONFIGURED_FARM", "FALLBACK_FARM", "TEST_ID")
 
 
 @pytest.fixture(autouse=True)
@@ -32,6 +32,8 @@ def test_classify_data_type():
     """Verify mapping of column names and SQL data types to kinds."""
     assert VariableService.classify_data_type("eid", "VARCHAR(50)") == "id"
     assert VariableService.classify_data_type("farm_id", "VARCHAR(50)") == "id"
+    assert VariableService.classify_data_type("id", "INTEGER") == "id"
+    assert VariableService.classify_data_type("id", "BIGINT") == "id"
     assert VariableService.classify_data_type("date", "DATE") == "date"
 
     # Numeric types
@@ -51,6 +53,30 @@ def test_classify_data_type():
     # Other types
     assert VariableService.classify_data_type("raw_blob", "BLOB") == "other"
     assert VariableService.classify_data_type("metadata", "JSON") == "other"
+
+
+def test_saved_id_column_is_not_a_measure():
+    """A numeric id already saved as shown (Farm KF) stays out of the measure list."""
+    VariableService.ensure_schema()
+    execute("DELETE FROM farm_columns WHERE farm_id = 'TEST_ID'")
+    execute(
+        """
+        INSERT INTO farm_columns (farm_id, column_name, kind, is_filter, is_shown, distinct_count)
+        VALUES ('TEST_ID', 'id', 'numeric', FALSE, TRUE, 100),
+               ('TEST_ID', 'weight', 'numeric', FALSE, TRUE, 40)
+        """
+    )
+    invalidate_active_columns("TEST_ID")
+
+    active = VariableService.get_active_columns("TEST_ID")
+    assert active["measures"] == ["weight"]
+
+    resp = VariableService.get_farm_columns_response("TEST_ID")
+    by_name = {c["column_name"]: c for c in resp["columns"]}
+    assert by_name["id"]["kind"] == "id"
+    assert by_name["id"]["is_shown"] is False
+    assert "id" not in resp["active_measures"]
+    assert "weight" in resp["active_measures"]
 
 
 def test_distinct_count_with_null():

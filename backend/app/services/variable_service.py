@@ -44,6 +44,8 @@ RESERVED_FILTER_NAMES = {
     "active_reference_mode",
     "farm_id",
 }
+# A row identifier (Farm KF stores one) is numeric, but it is not a production measure.
+NEVER_MEASURE_NAMES = {"id"}
 REQUIRED_WEIGHT_MEASURES = {"weight", "pweight", "finalpweight"}
 
 # Filters with dedicated FilterState fields and group-comparison support; any other enabled
@@ -103,7 +105,7 @@ class VariableService:
         """Classify column into id, date, numeric, categorical, or other."""
         col = column_name.lower().strip()
         dt = data_type.upper().strip()
-        if col in ("eid", "farm_id"):
+        if col in ("eid", "farm_id") or col in NEVER_MEASURE_NAMES:
             return "id"
         if col == "date":
             return "date"
@@ -385,6 +387,7 @@ class VariableService:
                 for r in rows
                 if bool(r.get("is_shown"))
                 and r.get("kind") == "numeric"
+                and r["column_name"].lower() not in NEVER_MEASURE_NAMES
                 and SAFE_COLUMN_NAME.match(r["column_name"])
             ]
             active = {
@@ -515,10 +518,10 @@ class VariableService:
 
         for r in rows:
             col_name = r["column_name"]
-            kind = r["kind"]
+            kind = "id" if col_name.lower() in NEVER_MEASURE_NAMES else r["kind"]
             is_reserved = col_name.lower() in RESERVED_FILTER_NAMES
             is_filter = bool(r["is_filter"]) and kind == "categorical" and not is_reserved
-            is_shown = bool(r["is_shown"]) and kind == "numeric"
+            is_shown = bool(r["is_shown"]) and kind == "numeric" and col_name.lower() not in NEVER_MEASURE_NAMES
             d_cnt = int(r.get("distinct_count") or 0)
 
             if is_filter:
