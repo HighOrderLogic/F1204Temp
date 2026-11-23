@@ -256,9 +256,12 @@
         } else {
           renderer(container);
         }
-        container.classList.remove('fade-in');
-        void container.offsetWidth;
-        container.classList.add('fade-in');
+        // Auto-refresh passes silent:true so a periodic redraw doesn't flash.
+        if (!options.silent) {
+          container.classList.remove('fade-in');
+          void container.offsetWidth;
+          container.classList.add('fade-in');
+        }
       };
       if (needsPlotly) {
         loadPlotly().then(run).catch((err) => {
@@ -312,6 +315,26 @@
     document.getElementById('sidebar-toggle').addEventListener('click', () => {
       document.getElementById('sidebar').classList.toggle('open');
     });
+
+    // Data Management shows the live table, so pick up uploads made elsewhere (admin CLI,
+    // another session) without asking the user to reload the page.
+    const DATA_MANAGEMENT_REFRESH_MS = 15000;
+    async function autoRefreshDataManagement() {
+      if (currentPage !== 'data-management' || document.hidden) return;
+      const content = document.getElementById('page-content');
+      // Leave the tab alone mid-interaction (typing a page number, selecting text).
+      if (content && content.contains(document.activeElement)) return;
+      if (typeof isFarmEmpty === 'function' && isFarmEmpty()) {
+        // No records when this page loaded, but there may be some now: refresh the farm
+        // metadata so the empty-farm gate above stops blocking the tab.
+        try {
+          await refreshFarmFilterMetadata();
+        } catch (_) { /* the next tick retries */ }
+        if (currentPage !== 'data-management') return;
+      }
+      renderCurrentPage({ silent: true });
+    }
+    setInterval(autoRefreshDataManagement, DATA_MANAGEMENT_REFRESH_MS);
 
     function onFiltersChanged(opts = {}) {
       if (currentPage === 'admin' && !opts?.farmChanged) {
